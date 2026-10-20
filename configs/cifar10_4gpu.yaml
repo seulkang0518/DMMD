@@ -1,0 +1,11 @@
+# Full-budget, paper-inspired feature training on four GPUs.
+# Batch 16/rank x 4 = 64 globally; global MMD statistics preserve that comparison.
+# Architecture remains our independent implementation, not exact author code.
+base: paper_inspired.yaml
+train:
+  batch_size: 16
+  mmd_scope: global
+  noise_levels_per_step: 16
+  steps: 250000
+runtime:
+  expected_world_size: 4

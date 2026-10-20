@@ -1,0 +1,5 @@
+torch>=2.2,<3
+torchvision>=0.17,<1
+numpy>=1.24
+PyYAML>=6
+Pillow>=10

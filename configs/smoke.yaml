@@ -1,0 +1,35 @@
+# Offline CPU wiring test with synthetic tensors. Not a research experiment.
+base: pilot.yaml
+data:
+  synthetic: true
+  synthetic_size: 32
+  validation_size: 8
+  num_workers: 0
+  random_flip: false
+model:
+  base_channels: 8
+  channel_mult: [1, 2]
+  time_dim: 16
+  head_dim: 4
+  dropout: 0.0
+train:
+  steps: 2
+  batch_size: 4
+  log_every: 1
+  save_every: 1
+  eval_every: 2
+sampling:
+  particles: 4
+  num_samples: 4
+  reference_size: 8
+  feature_batch_size: 4
+  noise_levels: 2
+  steps_per_level: 1
+preview:
+  particles: 4
+  reference_size: 8
+  validation_batch_size: 4
+  noise_levels: 2
+  steps_per_level: 1
+runtime:
+  device: cpu

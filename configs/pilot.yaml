@@ -1,0 +1,53 @@
+# Practical prototype; not an exact reproduction of the authors' architecture.
+seed: 42
+data:
+  root: ./data
+  download: false
+  num_workers: 4
+  validation_size: 5000
+  random_flip: true
+model:
+  base_channels: 64
+  channel_mult: [1, 2, 2, 2]
+  time_dim: 128
+  head_dim: 32   # four heads -> 128 features
+  dropout: 0.2
+noise:
+  timesteps: 1000
+  beta_start: 0.0001
+  beta_end: 0.02
+  t_min: 0.001
+  t_max: 0.999
+train:
+  steps: 20000
+  batch_size: 64       # per GPU/process
+  noise_levels_per_step: 1
+  lr: 0.0001
+  betas: [0.9, 0.999]
+  lambda_l2: 0.1
+  lambda_gp: 1.0
+  max_grad_norm: null
+  log_every: 50
+  save_every: 1000
+  keep_last: 3
+  eval_every: 2000
+sampling:
+  t_max: 0.9
+  t_min: 0.1
+  noise_levels: 10
+  steps_per_level: 10
+  step_size: 0.1
+  particles: 200
+  num_samples: 1024
+  reference_size: 1024  # 0 uses all training-split images
+  feature_batch_size: 128
+  pixel_clip: null     # no training/sampling pixel clipping by default
+preview:
+  particles: 16
+  reference_size: 128
+  noise_levels: 10
+  steps_per_level: 5
+  validation_batch_size: 64
+runtime:
+  device: auto
+  cpu_threads: 2

@@ -1,0 +1,12 @@
+# Matches selected reported hyperparameters, NOT an exact reproduction.
+# U-Net block/head choices and schedule interpolation are our implementation.
+base: pilot.yaml
+data:
+  validation_size: 0  # train on all 50K; no held-out feature validation
+model:
+  base_channels: 128
+train:
+  steps: 250000
+  noise_levels_per_step: 16
+sampling:
+  reference_size: 0
