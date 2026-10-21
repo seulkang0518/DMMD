@@ -281,8 +281,9 @@ comparisons. The pilot split and simplified U-Net also differ from the paper.
 - One scalar noise level is shared inside each comparison. Multiple levels per
   update are averaged before the optimizer step.
 - Class labels are ignored. There is no classification or reconstruction head.
-- The U-Net uses GroupNorm, sinusoidal time embeddings and four globally pooled
-  heads. Its simplified blocks and lack of attention are implementation choices,
+- The default U-Net uses GroupNorm, sinusoidal time embeddings and four globally
+  pooled heads. The spatial-head ablation below replaces global pooling with a
+  4x4 grid before each head's projection. Simplified blocks and lack of attention are implementation choices,
   not an exact reconstruction of unavailable author code.
 - Pilot: width 64, 20K steps, 1 level/update, 45K training images.
   Paper-inspired config: width 128, 250K steps, 16 levels/update, all 50K images.
@@ -294,6 +295,61 @@ comparisons. The pilot split and simplified U-Net also differ from the paper.
   nearly Gaussian.
 - No final high-step-size denoising extension, EMA, feature pretraining or
   MeanFlow student is included. Those are separate experiments.
+
+## Spatial feature-head ablation (one GPU, 10K updates)
+
+This is a controlled alternative to the existing global-head 10K run, not a
+claimed reproduction or a guaranteed remedy for its samples. It tests whether
+retaining coarse spatial positions helps distribution matching. Only the heads
+change scientifically: normalization and activation are followed by adaptive
+pooling to 4x4, flattening, then projection to 32 features per head (128 total).
+The backbone, noise schedule, data, seed, batch size 64, 16 noise levels per
+update, learning rate 1e-4 and regularization remain as in the one-GPU baseline.
+The model has 13,984,256 parameters versus 13,615,616 for global pooling; the
+368,640 extra parameters mean this test changes head capacity as well as layout
+sensitivity. The config retains the 4K and 10K checkpoints and requires one rank.
+
+Use a new workdir and start from scratch. First check the full batch on the GPU:
+
+    python -u train.py --config configs/cifar10_spatial4_1gpu_10k.yaml \
+      --workdir runs/spatial4_memory_check --device cuda --steps 2 \
+      --set train.log_every=1 --set train.eval_every=0
+
+Then launch the actual 10K run:
+
+    nohup python -u train.py --config configs/cifar10_spatial4_1gpu_10k.yaml \
+      --workdir runs/cifar10_spatial4_10k --device cuda \
+      > cifar10_spatial4_10k.log 2>&1 &
+
+`head_spatial_size` defaults to 1. Existing global-head checkpoints remain
+loadable for sampling, caching, diagnostics and a recipe-preserving resume.
+Resuming a global-head checkpoint as a spatial-head model is rejected.
+
+At 4K and 10K, cache reference means from all 50K training images and use the same
+standalone sampler as for the baseline: interacting particles 200, 10 time
+levels from 0.9 to 0.1, 10 steps/level, step size 0.1, seed 100042. Example at 10K:
+
+    python -u cache_stats.py \
+      --checkpoint runs/cifar10_spatial4_10k/checkpoints/step_00010000.pt \
+      --output runs/eval_spatial4_10000/stats.pt --device cuda --reference-size 0
+    python -u sample.py \
+      --checkpoint runs/cifar10_spatial4_10k/checkpoints/step_00010000.pt \
+      --stats runs/eval_spatial4_10000/stats.pt \
+      --output runs/eval_spatial4_10000/samples_1024 --device cuda \
+      --mode interacting --num-samples 1024 --particles 200 \
+      --steps-per-level 10 --step-size 0.1 --seed 100042
+
+For screening FID, generate the same 1,024 samples from the baseline using its
+own checkpoint and cached means in a separate output folder. Existing 200-image
+grids are useful visual references but are not a matched FID sample count.
+Install `requirements-fid.txt`, then run `evaluate_fid.py --samples OUTPUT_DIR`
+for both directories with the same reference and metric settings. A 1,024-image
+FID is a noisy screening metric, not a replacement for final 50K evaluation.
+
+The changes are CPU-tested for exact legacy-head arithmetic, legacy checkpoint
+loading/resume, sensitivity to spatial rearrangement, full second-order gradient
+penalty, and frozen-network pixel sampling. CUDA memory and image quality for the
+spatial variant still need to be checked on the experiment machine.
 
 ## Sources
 

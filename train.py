@@ -46,7 +46,11 @@ def validate_resume(old, new):
     # Runtime, duration, cadence, dataset location/worker count and preview
     # settings may change. Changing the training recipe requires a new run.
     for key in ("model", "noise"):
-        if old[key] != new[key]:
+        old_section, new_section = dict(old[key]), dict(new[key])
+        if key == "model":
+            old_section.setdefault("head_spatial_size", 1)
+            new_section.setdefault("head_spatial_size", 1)
+        if old_section != new_section:
             raise ValueError(f"Resume would change {key}; start a new workdir")
     for key in ("lr", "betas", "batch_size", "noise_levels_per_step",
                 "lambda_l2", "lambda_gp", "max_grad_norm"):

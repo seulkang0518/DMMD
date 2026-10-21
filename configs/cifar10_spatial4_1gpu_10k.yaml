@@ -1,0 +1,13 @@
+# Controlled head ablation; not an exact reproduction of the DMMD paper.
+# Compare against the existing global-head 10k run. Start in a NEW workdir.
+base: paper_inspired.yaml
+model:
+  head_spatial_size: 4
+train:
+  steps: 10000
+  mmd_scope: global
+  log_every: 10
+  # Retain the 4k and 10k checkpoints for matched standalone evaluation.
+  keep_last: 10
+runtime:
+  expected_world_size: 1

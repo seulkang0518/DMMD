@@ -43,28 +43,41 @@ class ResidualBlock(nn.Module):
 
 
 class FeatureHead(nn.Module):
-    def __init__(self, channels, output_dim):
+    def __init__(self, channels, output_dim, spatial_size=1):
         super().__init__()
+        if isinstance(spatial_size, bool) or not isinstance(spatial_size, int) or spatial_size < 1:
+            raise ValueError("Head spatial size must be a positive integer")
+        self.spatial_size = spatial_size
         self.norm = normalization(channels)
-        self.projection = nn.Linear(channels, output_dim)
+        self.projection = nn.Linear(channels * spatial_size ** 2, output_dim)
 
     def forward(self, h):
-        h = F.silu(self.norm(h)).mean(dim=(2, 3))
+        h = F.silu(self.norm(h))
+        if self.spatial_size == 1:
+            # Preserve the original operation and checkpoint parameter shapes.
+            h = h.mean(dim=(2, 3))
+        else:
+            if min(h.shape[-2:]) < self.spatial_size:
+                raise ValueError("Head grid cannot exceed its input feature map")
+            h = F.adaptive_avg_pool2d(h, self.spatial_size).flatten(1)
         return self.projection(h)
 
 
 class FeatureUNet(nn.Module):
     """Compact, time-conditioned U-Net, not a claim of exact paper architecture.
 
-    Four pooled feature heads: before downsampling, after downsampling,
+    Four feature heads: before downsampling, after downsampling,
     before upsampling (after middle blocks), and the final full-resolution map.
+    head_spatial_size=1 retains the original global pooling. Larger grids retain
+    coarse spatial positions before the learned projection; this is an ablation,
+    not an assertion about the authors' exact feature-head implementation.
     No batch normalization, self-attention, or mixed precision: the training
     objective needs reliable second derivatives through image-input gradients.
     """
 
     def __init__(
         self, base_channels=64, channel_mult=(1, 2, 2, 2),
-        time_dim=128, head_dim=32, dropout=0.2,
+        time_dim=128, head_dim=32, dropout=0.2, head_spatial_size=1,
     ):
         super().__init__()
         channels = [base_channels * m for m in channel_mult]
@@ -90,7 +103,7 @@ class FeatureUNet(nn.Module):
                 ResidualBlock(2 * channels[i - 1], channels[i - 1], time_dim, dropout)
             )
         self.heads = nn.ModuleList(
-            FeatureHead(c, head_dim)
+            FeatureHead(c, head_dim, head_spatial_size)
             for c in (channels[0], channels[-1], channels[-1], channels[0])
         )
 

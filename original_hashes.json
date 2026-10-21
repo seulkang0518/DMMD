@@ -1,0 +1,9 @@
+{
+  "dmmd/model.py": "bc43e009b913e3e68c0eb7922fccbaef63fe3b7c32ef3a6459f4d39e4b8b030a",
+  "dmmd/config.py": "d3f9b88fc288db2cb952389669a3f4a016dcaf95cdc2a765b1ab6621404d07fb",
+  "train.py": "e70e1eca55214dbef7bbbba522cbdd020ed702af933411d379d14c57aab40885",
+  "configs/cifar10_spatial4_1gpu_10k.yaml": null,
+  "tests/test_spatial_heads.py": null,
+  "README.md": "4e1324739e00a0c531aab64527099e722ab6b2f7d3152d094e628265c4b36e09",
+  "VALIDATION.md": "76da1c7b8e9836a66426267f4fd4e2df8cd0d1342e2f056f915acbc1f58b9269"
+}

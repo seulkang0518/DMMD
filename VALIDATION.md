@@ -42,3 +42,23 @@ Not verified here:
 
 Use the synthetic smoke config first in the cluster environment, then a short
 CIFAR-10 pilot. The full paper-inspired budget is not necessary for a wiring test.
+
+## Spatial-head ablation checks (2026-10-21)
+
+- All 25 unit checks passed, including the 18 existing checks and seven new head,
+  configuration, compatibility and gradient-penalty checks.
+- The actual pre-change global-head source and the updated default initialize
+  with identical state dictionaries and give bitwise-equal CPU outputs.
+- Four-by-four head outputs distinguish spatial rearrangements that global
+  pooling removes. The backbone initialization and output dimension are retained.
+- The width-128 spatial model completed one synthetic CPU optimizer update with
+  all 16 noise levels and finite parameter gradients (batch two for this check).
+- The spatial model has 13,984,256 parameters, up from 13,615,616; the feature-head
+  test changes capacity as well as spatial sensitivity.
+- Old checkpoint configs without head_spatial_size validate as size one. Loading
+  their weights and recipe-preserving resume remain supported; size-one to
+  size-four resume is rejected.
+- Frozen statistics caching and PNG sampling completed on CPU for both the
+  trained full-width spatial model and a legacy-config global model.
+- This is still a prototype ablation. Batch-64 CUDA memory, throughput, CIFAR-10
+  learning and FID for the spatial model have not been verified locally.

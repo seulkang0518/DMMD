@@ -15,6 +15,7 @@ DEFAULTS = {
     "model": {
         "base_channels": 64, "channel_mult": [1, 2, 2, 2],
         "time_dim": 128, "head_dim": 32, "dropout": 0.2,
+        "head_spatial_size": 1,
     },
     "noise": {
         "timesteps": 1000, "beta_start": 0.0001, "beta_end": 0.02,
@@ -136,6 +137,12 @@ def validate(c):
         raise ValueError("Use two to four U-Net scales for 32x32 images")
     if any(not isinstance(m, int) or m <= 0 for m in mult):
         raise ValueError("channel_mult entries must be positive integers")
+    # Old checkpoint configs predate this option and use the global head.
+    grid = c["model"].get("head_spatial_size", 1)
+    smallest_map = 32 // (2 ** (len(mult) - 1))
+    if (isinstance(grid, bool) or not isinstance(grid, int)
+            or not 1 <= grid <= smallest_map):
+        raise ValueError(f"model.head_spatial_size must be an integer in [1, {smallest_map}]")
     if len(c["train"]["betas"]) != 2 or any(
         not 0 <= b < 1 for b in c["train"]["betas"]
     ):
