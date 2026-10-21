@@ -346,6 +346,29 @@ Install `requirements-fid.txt`, then run `evaluate_fid.py --samples OUTPUT_DIR`
 for both directories with the same reference and metric settings. A 1,024-image
 FID is a noisy screening metric, not a replacement for final 50K evaluation.
 
+For the existing 4K comparison, `compare_heads.py` validates both runs and reuses
+the full-reference feature caches already computed. Keep GPU training paused.
+Its defaults find the preserved global checkpoint at
+`runs/eval_4000/checkpoint.pt` (or its original training checkpoint if available),
+the spatial checkpoint under `runs/cifar10_spatial4_10k/checkpoints/`, and caches
+under `runs/eval_4000/` and `runs/eval_spatial4_4000/`.
+
+    python -m pip install -r requirements-fid.txt
+    python -u compare_heads.py --step 4000 --validate-only
+    nohup python -u compare_heads.py --step 4000 > compare_heads_4000.log 2>&1 &
+    tail -f compare_heads_4000.log
+
+The helper generates 1,024 images per model with identical sampling settings and
+seed, evaluates each against all 50,000 unaugmented CIFAR-10 training images with
+the existing FID evaluator, prints a two-row table, and saves
+`runs/compare_heads_4000_1024/comparison.json`. The first metric run may download
+Inception weights. This is a small-sample screening comparison, not final FID.
+Override paths with `--baseline-checkpoint`, `--spatial-checkpoint`,
+`--baseline-stats`, `--spatial-stats` or `--data-root` if files were moved.
+Complete protocol-checked sample directories are reusable. Partial or mismatched
+outputs are rejected; choose a fresh `--output-root` instead of mixing runs.
+The helper never trains models or modifies checkpoints.
+
 The changes are CPU-tested for exact legacy-head arithmetic, legacy checkpoint
 loading/resume, sensitivity to spatial rearrangement, full second-order gradient
 penalty, and frozen-network pixel sampling. CUDA memory and image quality for the

@@ -62,3 +62,19 @@ CIFAR-10 pilot. The full paper-inspired budget is not necessary for a wiring tes
   trained full-width spatial model and a legacy-config global model.
 - This is still a prototype ablation. Batch-64 CUDA memory, throughput, CIFAR-10
   learning and FID for the spatial model have not been verified locally.
+
+## Matched screening helper checks (2026-10-21)
+
+- All 33 checks passed, including eight added comparison-workflow checks.
+- Old global-head and new spatial-head checkpoint configs are compared after
+  normalizing only the legacy head default and ignoring duration/run controls.
+- Incorrect head grids, checkpoint steps/hashes, cache reference counts, time
+  grids, synthetic caches, and mismatched training recipes are rejected.
+- Reused samples must match the checkpoint, count, seed, interaction mode,
+  sampling settings, time grid, PNG export convention and every expected PNG name.
+- The summary rejects stale-count or non-finite FID records. Metrics are rerun
+  even when completed samples are reused.
+- Generation and metric command orchestration, plus sample reuse, were exercised
+  with tiny fixtures and mocked child processes. Fabricated test scores are not
+  real FID measurements. Actual torch-fidelity/CUDA execution requires the remote
+  experiment environment, its checkpoints/data, and Inception weights.
